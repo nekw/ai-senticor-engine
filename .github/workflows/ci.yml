@@ -27,6 +27,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          uv venv
           uv pip install -r requirements.txt
 
       - name: Run pre-commit hooks
@@ -57,6 +58,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          uv venv
           uv pip install -r requirements.txt
 
       - name: Run tests with coverage

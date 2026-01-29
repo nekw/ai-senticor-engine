@@ -9,6 +9,7 @@ torch
 fpdf
 pytest
 pytest-asyncio
+pytest-cov
 python-dotenv
 langchain
 langchain-openai
@@ -17,10 +18,8 @@ langchain-chroma
 langchain-huggingface
 chromadb
 sentence-transformers
-kaleido
 
 twisted
-pytest-asyncio
 pytest-tornasync
 pytest-trio
 pytest-twisted

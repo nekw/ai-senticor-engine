@@ -17,7 +17,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-from utils.logger import AppLogger
+from src.utils.logger import AppLogger
 
 
 class RAGEngine:

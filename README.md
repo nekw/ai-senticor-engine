@@ -244,7 +244,7 @@ MIT — see `LICENSE` for details.
 
 ## 🔮 Roadmap
 
-See [./docs/ROADMAP.md](ROADMAP.md) for the complete product roadmap.
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the complete product roadmap.
 
 **Upcoming Highlights:**
 

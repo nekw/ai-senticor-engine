@@ -1,36 +1,51 @@
 [![CI](https://github.com/nekw/ai-senticor-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/nekw/ai-senticor-engine/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Code Coverage](https://img.shields.io/badge/coverage-76%25-brightgreen.svg)](https://github.com/nekw/ai-senticor-engine)
+[![Tests](https://img.shields.io/badge/tests-114%20passing-success.svg)](https://github.com/nekw/ai-senticor-engine)
 
 # 🚀 AI Senticor Engine
 
 **AI-Powered Market Sentiment & Volatility Intelligence Platform**
+
+A cutting-edge financial analysis tool that combines sentiment analysis from FinBERT AI with real-time market data to provide actionable insights for stock trading and portfolio management.
 
 **Keywords:** sentiment analysis, stock market, AI trading, FinBERT, financial analysis, volatility analysis, RAG, vector database, LLM, market intelligence, technical analysis, stock screening, alpha detection, quantitative finance, machine learning, NLP, financial AI, trading signals, market sentiment
 
 > **⚠️ DISCLAIMER**
 > This repository was developed with the assistance of AI tools and is intended for educational and research purposes only. The code, models, and recommendations provided herein should **not be used in production environments or for actual trading decisions** without thorough review, validation, and testing by qualified professionals. No warranty is provided regarding accuracy, reliability, or suitability for any particular purpose. Users assume all risks associated with the use of this software.
 
-A cutting-edge financial analysis tool that combines sentiment analysis from FinBERT AI with real-time market data to provide actionable insights for stock trading and portfolio management.
+---
+
+## ❓ Why This Project
+
+Real-world demonstration of **production-grade AI engineering** applied to financial market intelligence:
+
+- **Bridge AI & Finance**: Practical application of LLMs, RAG, vector databases, and NLP transformers in quantitative finance
+- **End-to-End Product Thinking**: From data ingestion → AI analysis → interactive visualization → professional reporting
+- **Engineering Excellence**: Showcasing async architecture, comprehensive testing (114 tests, 76% coverage), CI/CD, and modular design patterns
+
+## 🚀 Project Highlights
+
+**Business Impact:**
+- **Alpha Detection Engine**: Auto-identifies high-sentiment, low-volatility opportunities with intelligent risk scoring
+- **Market Intelligence Map**: Interactive quadrant visualization revealing strategic positioning across 4 zones: Alpha, Hype, Danger, Oversight.
+- **Professional PDF Reports**: Client-ready analysis with market map visualization and actionable insights
+
+**AI/ML Engineering:**
+- **FinBERT Sentiment Analysis**: Fine-tuned transformer model (ProsusAI) for financial news sentiment scoring
+- **RAG Sector Insights**: ChromaDB vector search + LLM generation for sector-wide commentary
+- **Multi-LLM Support**: Provider abstraction layer with graceful fallback (OpenAI/Anthropic/HuggingFace FREE models)
+
+**Technical Architecture:**
+- **10x Faster with Async**: Parallel processing across 50+ tickers using `asyncio` patterns
+- **Testing Excellence**: 114 unit tests with mocking, fixtures, edge cases (timeout, rate limits, malformed data)
+- **CI/CD Pipeline**: GitHub Actions with automated lint, test, coverage using `uv` for 10-100x faster builds
+- **Code Quality**: Pre-commit hooks (Black, isort, flake8) ensuring consistent, production-ready code
 
 ---
 
-## 🎯 Key Features
-
-- **AI-Driven Sentiment Analysis**: Leverages ProsusAI's FinBERT model for financial text analysis with NLP transformers
-- **RAG Sector News Analysis**: Sector-wide commentary and insights using semantic news retrieval (ChromaDB vector database) and LLM generation
-- **High-Performance Async Architecture**: Parallel ticker analysis and data fetching for maximum speed and scalability
-- **Alpha Detection**: Automatically identifies high-sentiment, low-volatility opportunities with intelligent risk scoring
-- **Multiple LLM Support**: OpenAI GPT-4, Anthropic Claude, and FREE HuggingFace models (FLAN-T5) with dynamic provider switching
-- **Interactive Quadrant Visualization**: Maps stocks across sentiment vs. volatility dimensions with strategic zone classification
-- **Real-Time Market Data**: Integration with OpenBB Platform for live stock prices, news feeds, and multi-provider data aggregation
-- **Professional PDF Reports**: Generate client-ready analysis reports with market map visualization and actionable insights
-- **Company Intelligence**: Detailed view with candlestick charts, technical indicators, and risk-adjusted recommendations
-- **Progress Tracking**: Real-time progress bars for analysis and report generation with async task monitoring
-
----
-
-## 🖼️ Demo
+## �🖼️ Demo
 
 ![Senticor Demo](docs/images/senticor_demo.gif)
 
@@ -42,10 +57,10 @@ A cutting-edge financial analysis tool that combines sentiment analysis from Fin
 **[View Sample PDF Report](docs/images/senticor_market_report_20260127_2047.pdf)** - Professional market analysis report generated by the platform
 
 The **Senticor Market Map** positions stocks in four strategic zones:
-- 🟢 **Alpha Zone**: Positive sentiment + Low volatility (Ideal)
-- 🔵 **Hype Zone**: Positive sentiment + High volatility (Momentum)
-- 🔴 **Danger Zone**: Negative sentiment + High volatility (Avoid)
-- ⚪ **Oversight**: Negative sentiment + Low volatility (Contrarian)
+- 🟢 **Alpha Zone**: Positive sentiment + Low volatility
+- 🔵 **Hype Zone**: Positive sentiment + High volatility
+- 🔴 **Danger Zone**: Negative sentiment + High volatility
+- ⚪ **Oversight**: Negative sentiment + Low volatility
 
 ---
 
@@ -57,7 +72,7 @@ The **Senticor Market Map** positions stocks in four strategic zones:
 
 👉 **For detailed system architecture, module breakdown, and data flows**, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-👉 **New to the project? Start with the comprehensive learning guide**: [LEARNING_GUIDE.md](LEARNING_GUIDE.md)
+👉 **New to the project? Start with the comprehensive learning guide**: [docs/LEARNING_GUIDE.md](docs/LEARNING_GUIDE.md)
 
 ---
 
@@ -94,7 +109,22 @@ streamlit run src/app.py
 streamlit run src/app.py -- --reload-db
 ```
 
-### 🔑 API Key Configuration
+### � Privacy Configuration (Recommended)
+
+To prevent Streamlit from sending usage statistics, create or edit the config file:
+
+```bash
+# Create the Streamlit config directory
+mkdir -p ~/.streamlit  # On Windows: %USERPROFILE%\.streamlit
+
+# Add the following to ~/.streamlit/config.toml
+[browser]
+gatherUsageStats = false
+```
+
+This disables telemetry and keeps your usage data private.
+
+### �🔑 API Key Configuration
 
 Some data providers require API keys. OpenBB Platform uses a centralized credential system.
 
@@ -218,12 +248,14 @@ See [./docs/ROADMAP.md](ROADMAP.md) for the complete product roadmap.
 
 **Upcoming Highlights:**
 
-- 🤖 **Competitive Analysis Agent** (v2.0) - Autonomous sector-wide research with multi-company comparison matrices, pattern recognition, and hypothesis generation/testing
-- 📊 Backtesting module for historical performance analysis
-- 🔄 Real-time streaming data with WebSocket support
-- 📈 Portfolio optimization algorithms
-- 🎯 Machine learning-based volatility forecasting
-- 📧 Email/SMS alerts for alpha opportunities
+- 🤖 **Competitive Analysis Agent** (v2.0) - Autonomous sector-wide research with multi-company comparison matrices, pattern recognition, and hypothesis generation/testing using LangGraph
+- 📊 **Backtesting Engine** - Historical performance analysis with Sharpe ratio, max drawdown, and strategy validation
+- 🔄 **Real-time Streaming** - WebSocket integration for live price updates and sentiment feeds
+- 📈 **Portfolio Optimizer** - Modern Portfolio Theory (MPT) with efficient frontier calculation
+- 🎯 **ML Volatility Forecasting** - LSTM/GARCH models for volatility prediction with uncertainty quantification
+- 📧 **Alert System** - Configurable notifications via email/SMS/Slack for alpha opportunities
+- 🔐 **User Authentication** - Multi-user support with portfolio tracking and personalized watchlists
+- 📱 **API Backend** - REST/GraphQL API for programmatic access and third-party integrations
 
 ---
 

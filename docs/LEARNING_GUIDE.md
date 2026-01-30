@@ -8,10 +8,10 @@ Welcome to the AI Senticor Engine learning guide! This document helps you unders
 
 This learning guide provides a high-level overview. For detailed technical information:
 
-- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Complete system architecture, module breakdowns, design patterns, and data flow
-- **[docs/RAG_SECTOR_NEWS.md](docs/RAG_SECTOR_NEWS.md)** - RAG system implementation, LLM providers, sector news analysis, and configuration
-- **[README.md](README.md)** - Quick start guide, installation, and feature overview
-- **[ROADMAP.md](ROADMAP.md)** - Future features and development timeline
+- **[README.md](../README.md)** - Quick start guide, installation, project highlights, and feature overview
+- **[docs/ARCHITECTURE.md](ARCHITECTURE.md)** - Complete system architecture, module breakdowns, design patterns, and data flow
+- **[docs/RAG_SECTOR_NEWS.md](RAG_SECTOR_NEWS.md)** - RAG system implementation, LLM providers, sector news analysis, and configuration
+- **[docs/ROADMAP.md](ROADMAP.md)** - Future features and development timeline
 
 ---
 

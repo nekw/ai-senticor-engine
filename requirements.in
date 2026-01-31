@@ -4,6 +4,7 @@ numpy
 plotly
 kaleido
 openbb
+openbb-core==1.5.8
 transformers
 torch
 fpdf

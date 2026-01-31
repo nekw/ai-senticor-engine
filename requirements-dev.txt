@@ -1,0 +1,11 @@
+pytest
+pytest-asyncio
+pytest-cov
+twisted
+pytest-tornasync
+pytest-trio
+pytest-twisted
+pre-commit
+bandit[toml]
+safety
+pip-audit

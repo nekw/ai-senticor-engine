@@ -7,9 +7,6 @@ openbb
 transformers
 torch
 fpdf
-pytest
-pytest-asyncio
-pytest-cov
 python-dotenv
 langchain
 langchain-openai
@@ -19,8 +16,8 @@ langchain-huggingface
 chromadb
 sentence-transformers
 
-twisted
-pytest-tornasync
-pytest-trio
-pytest-twisted
-pre-commit
+# Security to be fixed (pinned versions to address CVEs)
+setuptools
+pip>=25.3
+python-multipart
+xmltodict

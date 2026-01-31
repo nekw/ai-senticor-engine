@@ -206,7 +206,7 @@ Ticker → Sector Mapping → Semantic Query → Vector Search → Sector News �
 - **UI Settings**: Sidebar title, theme colors (blue, not red)
 - **Alpha Detection Thresholds**: Sentiment (0.0), Volatility (0.5)
 - **Visualization**: Chart height (600px), marker sizes, symbols, colors
-- **Quadrant Zones**: 7 named zones with remarks (Alpha, Hype, Danger, Oversight, Safe Haven, Grind, Reversal)
+- **Quadrant Zones**: 4 named zones with remarks (Alpha, Hype, Danger, Oversight)
 
 **Benefits**:
 - Single source of truth for all magic numbers
@@ -389,7 +389,7 @@ GitHub Actions workflow:
 ### Scalability
 
 **Current Capabilities**:
-- ✅ **Parallel ticker processing** (asyncio-based)
+- ✅ Parallel ticker processing (asyncio-based)
 - ✅ In-memory data storage
 - ✅ Single-user sessions
 - ✅ Concurrent data fetching

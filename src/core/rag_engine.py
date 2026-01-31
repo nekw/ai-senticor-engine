@@ -134,8 +134,13 @@ class RAGEngine:
                     self.llm = ChatAnthropic(model=model, temperature=temperature)
                 elif llm_provider.lower() == "huggingface":
                     # Load HuggingFace model locally (free, no API key needed)
-                    self.hf_tokenizer = AutoTokenizer.from_pretrained(model)
-                    self.hf_model = AutoModelForSeq2SeqLM.from_pretrained(model)
+                    # Security: Pin to 'main' revision and disable remote code execution
+                    self.hf_tokenizer = AutoTokenizer.from_pretrained(
+                        model, revision="main", trust_remote_code=False
+                    )
+                    self.hf_model = AutoModelForSeq2SeqLM.from_pretrained(
+                        model, revision="main", trust_remote_code=False
+                    )
                     self.hf_temperature = temperature
                     self.llm = "huggingface"  # Flag to use custom generation
                     print(f"✓ RAG with HuggingFace generation enabled: {model}")

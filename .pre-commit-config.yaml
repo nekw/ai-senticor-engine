@@ -1,6 +1,8 @@
 # Pre-commit hooks configuration for AI-Senticor-Engine
 # Install with: pre-commit install
 
+exclude: 'requirements\.txt$'
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0

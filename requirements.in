@@ -17,8 +17,10 @@ langchain-huggingface
 chromadb
 sentence-transformers
 
-# Security to be fixed (pinned versions to address CVEs)
+# Security fixes - some blocked by dependency constraints
+# python-multipart: CVE requires >=0.0.22 but openbb-core pins to <0.0.21
+# Waiting for openbb-core update to resolve
 setuptools
 pip>=25.3
-python-multipart
+python-multipart  # Constrained by openbb-core to 0.0.20
 xmltodict

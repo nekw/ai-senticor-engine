@@ -1,6 +1,7 @@
-[![CI](https://github.com/nekw/ai-senticor-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/nekw/ai-senticor-engine/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![CI](https://github.com/nekw/ai-senticor-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/nekw/ai-senticor-engine/actions/workflows/ci.yml)
+[![Security](https://img.shields.io/github/actions/workflow/status/nekw/ai-senticor-engine/ci.yml?label=security&logo=github)](https://github.com/nekw/ai-senticor-engine/security/code-scanning)
 [![Code Coverage](https://img.shields.io/badge/coverage-76%25-brightgreen.svg)](https://github.com/nekw/ai-senticor-engine)
 [![Tests](https://img.shields.io/badge/tests-114%20passing-success.svg)](https://github.com/nekw/ai-senticor-engine)
 
@@ -40,8 +41,9 @@ Real-world demonstration of **production-grade AI engineering** applied to finan
 **Technical Architecture:**
 - **10x Faster with Async**: Parallel processing across 50+ tickers using `asyncio` patterns
 - **Testing Excellence**: 114 unit tests with mocking, fixtures, edge cases (timeout, rate limits, malformed data)
-- **CI/CD Pipeline**: GitHub Actions with automated lint, test, coverage using `uv` for 10-100x faster builds
-- **Code Quality**: Pre-commit hooks (Black, isort, flake8) ensuring consistent, production-ready code
+- **CI/CD Pipeline**: GitHub Actions with automated lint, test, coverage, and security scanning using `uv` for 10-100x faster builds
+- **Security First**: Automated security scanning with Bandit, Safety, pip-audit, and Trivy; SARIF results uploaded to GitHub Security
+- **Code Quality**: Pre-commit hooks (Black, isort, flake8, mypy) ensuring consistent, production-ready code
 
 ---
 

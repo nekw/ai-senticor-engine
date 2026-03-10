@@ -14,12 +14,15 @@ def render_market_map_tab(data: pd.DataFrame):
     Args:
         data: DataFrame with analysis results.
     """
+    # On mobile, stack vertically; on desktop, side-by-side
+    # CSS will handle the responsive stacking
     col1, col2 = st.columns([2, 1])
 
     with col1:
         st.subheader("Senticor Market Map")
 
         # Controls row: Show Labels toggle and PDF button
+        # These will stack on mobile via CSS
         ctrl_col1, ctrl_col2, ctrl_col3 = st.columns([1, 1, 3])
         with ctrl_col1:
             show_labels = st.toggle("Show Labels", value=True)
@@ -113,4 +116,5 @@ def _render_market_summary(data: pd.DataFrame):
         by=["Sentiment", "Volatility"], ascending=[False, False]
     )
 
+    # Responsive table height: smaller on mobile
     st.dataframe(summary_data, hide_index=True, height=600, use_container_width=True)

@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from src.config import APP_TITLE
 from src.core.analyzer import SentimentEngine
+from src.ui.mobile_styles import inject_mobile_styles
 
 
 def load_api_credentials():
@@ -64,7 +65,19 @@ def configure_page(reload_db: bool = False):
     Args:
         reload_db: If True, reload the RAG vector database with sample news.
     """
-    st.set_page_config(page_title=APP_TITLE, layout="wide")
+    st.set_page_config(
+        page_title=APP_TITLE,
+        layout="wide",
+        initial_sidebar_state="auto",  # Auto-collapse on mobile
+        menu_items={
+            "Get Help": None,
+            "Report a bug": None,
+            "About": f"# {APP_TITLE}\nAI-Powered Market Sentiment & Volatility Analysis",
+        },
+    )
+
+    # Inject mobile-responsive CSS
+    inject_mobile_styles()
 
     # Don't load credentials at startup - they'll be loaded when actually needed
     # The MarketDataClient will trigger credential loading on first use

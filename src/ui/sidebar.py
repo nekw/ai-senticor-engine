@@ -154,6 +154,8 @@ def render_alpha_flags(data: pd.DataFrame):
 def render_sidebar() -> str:
     """Render complete sidebar with all controls.
 
+    Note: Sidebar is automatically responsive via CSS - auto-collapses on mobile.
+
     Returns:
         Comma-separated string of ticker symbols.
     """

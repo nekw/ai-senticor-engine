@@ -32,11 +32,13 @@ Real-world demonstration of **production-grade AI engineering** applied to finan
 - **Alpha Detection Engine**: Auto-identifies high-sentiment, low-volatility opportunities with intelligent risk scoring
 - **Market Intelligence Map**: Interactive quadrant visualization revealing strategic positioning across 4 zones: Alpha, Hype, Danger, Oversight.
 - **Professional PDF Reports**: Client-ready analysis with market map visualization and actionable insights
+- **Competitive Analysis Agent**: Autonomous peer-universe research with sector narrative, confidence scoring, and competitive PDF export
 
 **AI/ML Engineering:**
 - **FinBERT Sentiment Analysis**: Fine-tuned transformer model (ProsusAI) for financial news sentiment scoring
 - **RAG Sector Insights**: ChromaDB vector search + LLM generation for sector-wide commentary
 - **Multi-LLM Support**: Provider abstraction layer with graceful fallback (OpenAI/Anthropic/HuggingFace FREE models)
+- **Multi-Agent Orchestration**: Lightweight `asyncio` supervisor with specialized worker agents for autonomous sector research
 
 **Technical Architecture:**
 - **10x Faster with Async**: Parallel processing across 50+ tickers using `asyncio` patterns
@@ -73,6 +75,8 @@ The **Senticor Market Map** positions stocks in four strategic zones:
 **Architecture**: Modular layered design with separation between presentation, business logic, and utilities.
 
 👉 **For detailed system architecture, module breakdown, and data flows**, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+👉 **For the new Competitive Analysis Agent workflow and output schema**, see [docs/COMPETITIVE_ANALYSIS.md](docs/COMPETITIVE_ANALYSIS.md)
 
 👉 **New to the project? Start with the comprehensive learning guide**: [docs/LEARNING_GUIDE.md](docs/LEARNING_GUIDE.md)
 
@@ -198,9 +202,11 @@ OBB_ALPHA_VANTAGE_API_KEY=your_av_key_here
    - View the Market Map for overall positioning with sortable market summary
    - Check "🎯 Alpha Flags" in the sidebar for top opportunities
    - Use "Company Intelligence" tab for detailed stock analysis with risk-adjusted recommendations
+   - Use "Competitive Analysis" tab for peer-universe intelligence, signal comparison, and confidence-scored narrative
 
 6. **Generate Report**
    - Download PDF report for documentation or presentations
+   - Download Competitive PDF report from the Competitive Analysis tab
 
 ---
 
@@ -273,7 +279,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the complete product roadmap.
 
 **Upcoming Highlights:**
 
-- 🤖 **Competitive Analysis Agent** (v2.0) - Autonomous sector-wide research with multi-company comparison matrices, pattern recognition, and hypothesis generation/testing using LangGraph
+- 🤖 **Competitive Analysis Agent v2.0** - Extend current shipped multi-agent pipeline with LangGraph memory, hypothesis generation/testing, and deeper pattern mining
 - 📊 **Backtesting Engine** - Historical performance analysis with Sharpe ratio, max drawdown, and strategy validation
 - 🔄 **Real-time Streaming** - WebSocket integration for live price updates and sentiment feeds
 - 📈 **Portfolio Optimizer** - Modern Portfolio Theory (MPT) with efficient frontier calculation

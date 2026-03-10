@@ -57,6 +57,8 @@ def initialize_session_state():
         st.session_state.cache = {}
     if "rag_cache" not in st.session_state:
         st.session_state.rag_cache = {}
+    if "competitive_cache" not in st.session_state:
+        st.session_state.competitive_cache = {}
 
 
 def configure_page(reload_db: bool = False):

@@ -13,6 +13,15 @@ import plotly.graph_objects as go
 from fpdf import FPDF
 
 
+def _latin1_safe(value) -> str:
+    """Convert text to a latin-1 safe string for legacy FPDF writer.
+
+    Unsupported characters (emoji/symbols) are replaced with '?' to avoid
+    UnicodeEncodeError during page serialization.
+    """
+    return str(value).encode("latin-1", errors="replace").decode("latin-1")
+
+
 def generate_pdf_report(
     df: pd.DataFrame, quadrant_fig: go.Figure = None, progress_callback=None
 ) -> bytes:
@@ -135,7 +144,7 @@ def generate_pdf_report(
         else:
             pdf.set_fill_color(255, 255, 255)
 
-        pdf.cell(40, 8, str(row.ticker), 1, 0, "C", True)
+        pdf.cell(40, 8, _latin1_safe(row.ticker), 1, 0, "C", True)
 
         # Color-code sentiment
         sentiment = row.sentiment
@@ -178,7 +187,7 @@ def generate_pdf_report(
 * Market Tone: {_market_tone(avg_sentiment, positive_count, len(df))}
     """
 
-    pdf.multi_cell(0, 5, insights_text.strip())
+    pdf.multi_cell(0, 5, _latin1_safe(insights_text.strip()))
 
     pdf.ln(8)
 
@@ -203,6 +212,153 @@ def generate_pdf_report(
         return output
     else:
         return output.encode("latin-1")
+
+
+def generate_competitive_pdf_report(report: dict, progress_callback=None) -> bytes:
+    """Generate a PDF report for competitive multi-agent analysis.
+
+    Args:
+        report: Competitive analysis payload returned by orchestrator.
+        progress_callback: Optional callback function(step, message).
+
+    Returns:
+        PDF file content as bytes.
+    """
+    if progress_callback:
+        progress_callback(0, "Initializing competitive report...")
+
+    pdf = FPDF()
+    pdf.add_page()
+
+    if progress_callback:
+        progress_callback(1, "Creating header...")
+
+    focus = _latin1_safe(report.get("focus_ticker", "N/A"))
+    sector = _latin1_safe(report.get("sector", "Unknown"))
+    confidence = report.get("confidence", 0.0)
+    generated_at = _latin1_safe(report.get("generated_at", datetime.now().isoformat()))
+
+    pdf.set_font("Arial", "B", 18)
+    pdf.set_text_color(40, 70, 120)
+    pdf.cell(0, 12, "AI Senticor Engine: Competitive Analysis", ln=True, align="C")
+    pdf.set_font("Arial", "", 10)
+    pdf.set_text_color(80)
+    pdf.cell(
+        0,
+        6,
+        f"Focus: {focus} | Sector: {sector} | Confidence: {confidence:.2f}",
+        ln=True,
+        align="C",
+    )
+    pdf.cell(0, 6, f"Generated: {generated_at}", ln=True, align="C")
+    pdf.ln(8)
+
+    if progress_callback:
+        progress_callback(2, "Writing peer and signal summary...")
+
+    peers = report.get("peer_universe", [])
+    pdf.set_font("Arial", "B", 12)
+    pdf.set_text_color(0)
+    pdf.cell(0, 8, "Peer Universe", ln=True)
+    pdf.set_font("Arial", "", 10)
+    peer_text = ", ".join(peers) if peers else "No peers resolved"
+    pdf.multi_cell(0, 5, _latin1_safe(peer_text))
+    pdf.ln(2)
+
+    signals = report.get("signals", [])
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 8, "Signal Comparison", ln=True)
+    pdf.set_font("Arial", "B", 10)
+    pdf.set_fill_color(40, 70, 120)
+    pdf.set_text_color(255)
+    pdf.cell(35, 8, "Ticker", 1, 0, "C", True)
+    pdf.cell(35, 8, "Sentiment", 1, 0, "C", True)
+    pdf.cell(40, 8, "Trend", 1, 0, "C", True)
+    pdf.cell(40, 8, "Volatility", 1, 0, "C", True)
+    pdf.cell(40, 8, "News Count", 1, 1, "C", True)
+
+    pdf.set_font("Arial", "", 9)
+    for idx, signal in enumerate(signals):
+        row_color = 250 if idx % 2 == 0 else 255
+        pdf.set_fill_color(row_color, row_color, row_color)
+        pdf.set_text_color(0)
+        pdf.cell(35, 7, _latin1_safe(signal.get("ticker", "")), 1, 0, "C", True)
+        pdf.cell(35, 7, f"{signal.get('sentiment', 0.0):.2f}", 1, 0, "C", True)
+        pdf.cell(
+            40,
+            7,
+            f"{signal.get('sentiment_trend', 0.0):+.2f}",
+            1,
+            0,
+            "C",
+            True,
+        )
+        pdf.cell(
+            40,
+            7,
+            f"{signal.get('volatility', 0.0) * 100:.2f}%",
+            1,
+            0,
+            "C",
+            True,
+        )
+        pdf.cell(40, 7, str(signal.get("news_count", 0)), 1, 1, "C", True)
+
+    if not signals:
+        pdf.cell(0, 6, "No signal rows were produced.", ln=True)
+
+    if progress_callback:
+        progress_callback(3, "Adding narrative and risks...")
+
+    pdf.ln(3)
+    pdf.set_font("Arial", "B", 12)
+    pdf.set_text_color(0)
+    pdf.cell(0, 8, "Competitive Narrative", ln=True)
+    pdf.set_font("Arial", "", 9)
+    narrative = report.get("narrative", "") or "Narrative not available for this run."
+    cleaned_narrative = _latin1_safe(narrative.replace("**", ""))
+    pdf.multi_cell(0, 5, cleaned_narrative)
+
+    risk_flags = report.get("risk_flags", [])
+    if risk_flags:
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "Risk Flags", ln=True)
+        pdf.set_font("Arial", "", 9)
+        for flag in risk_flags:
+            pdf.multi_cell(0, 5, _latin1_safe(f"- {flag}"))
+
+    if progress_callback:
+        progress_callback(4, "Adding citations and disclaimer...")
+
+    citations = report.get("citations", {})
+    if citations:
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "Sources", ln=True)
+        pdf.set_font("Arial", "", 9)
+        for ticker, headlines in citations.items():
+            pdf.multi_cell(0, 5, _latin1_safe(f"{ticker}:"))
+            for headline in headlines:
+                pdf.multi_cell(0, 5, _latin1_safe(f"  - {headline}"))
+
+    pdf.ln(4)
+    pdf.set_font("Arial", "I", 8)
+    pdf.set_text_color(100)
+    pdf.multi_cell(
+        0,
+        4,
+        "Disclaimer: This competitive analysis report is generated by an AI agentic system "
+        "for educational and research use only and does not constitute financial advice.",
+    )
+
+    if progress_callback:
+        progress_callback(5, "Finalizing PDF...")
+
+    output = pdf.output(dest="S")
+    if isinstance(output, bytes):
+        return output
+    return output.encode("latin-1")
 
 
 def _sentiment_label(sentiment: float) -> str:

@@ -173,6 +173,7 @@ def render_sidebar() -> str:
         height=120,
         help="Enter ticker symbols separated by commas",
     )
+    st.session_state.current_tickers = tickers
 
     # Run Engine button
     run_clicked = st.sidebar.button("🚀 Run Engine", use_container_width=True)

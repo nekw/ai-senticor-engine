@@ -9,7 +9,12 @@ from src.config import ALPHA_SENTIMENT_THRESHOLD, ALPHA_VOLATILITY_THRESHOLD
 from src.ui.analysis_engine import run_analysis
 from src.ui.config_loader import configure_page
 from src.ui.sidebar import render_alpha_flags, render_sidebar
-from src.ui.tabs import render_deep_dive_tab, render_logs_tab, render_market_map_tab
+from src.ui.tabs import (
+    render_competitive_tab,
+    render_deep_dive_tab,
+    render_logs_tab,
+    render_market_map_tab,
+)
 from src.utils.logger import AppLogger
 
 
@@ -101,8 +106,14 @@ def _execute_analysis(tickers: str):
 
 def _render_tabs():
     """Render all application tabs."""
-    tab_home, tab1, tab2, tab3 = st.tabs(
-        ["🏠 Home", "📊 Market Intelligence", "🔍 Company Intelligence", "📋 Logs"]
+    tab_home, tab1, tab2, tab3, tab4 = st.tabs(
+        [
+            "🏠 Home",
+            "📊 Market Intelligence",
+            "🔍 Company Intelligence",
+            "🏁 Competitive Analysis",
+            "📋 Logs",
+        ]
     )
 
     with tab_home:
@@ -120,6 +131,9 @@ def _render_tabs():
         render_deep_dive_tab(st.session_state.data, st.session_state.cache)
 
     with tab3:
+        render_competitive_tab(st.session_state.data)
+
+    with tab4:
         render_logs_tab()
 
 

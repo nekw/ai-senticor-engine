@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
-from src.utils.pdf_gen import generate_pdf_report
+from src.utils.pdf_gen import generate_competitive_pdf_report, generate_pdf_report
 
 
 class TestGeneratePDFReport:
@@ -262,3 +262,31 @@ class TestGeneratePDFReport:
         assert isinstance(result, bytes)
         # Image method should not be called
         assert not mock_pdf.image.called
+
+
+def test_competitive_pdf_handles_unicode_content():
+    """Competitive PDF generation should not fail on emoji/non-latin text."""
+    report = {
+        "generated_at": "2026-03-10T10:10:10",
+        "focus_ticker": "NVDA",
+        "sector": "Semiconductors",
+        "peer_universe": ["NVDA", "AMD", "TSM"],
+        "signals": [
+            {
+                "ticker": "NVDA",
+                "sentiment": 0.85,
+                "sentiment_trend": 0.12,
+                "volatility": 0.44,
+                "news_count": 12,
+            }
+        ],
+        "narrative": "**📰 Sector Commentary**\nNVIDIA demand remains strong in AI chips.",
+        "citations": {"NVDA": ["📰 AI accelerator demand surges", "TSM ramps 3nm"]},
+        "confidence": 0.9,
+        "risk_flags": ["Low signal coverage for one peer", "Unicode test: 東京 market"],
+        "errors": [],
+    }
+
+    result = generate_competitive_pdf_report(report)
+    assert isinstance(result, bytes)
+    assert len(result) > 0

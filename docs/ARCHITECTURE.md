@@ -144,6 +144,28 @@ Ticker → Sector Mapping → Semantic Query → Vector Search → Sector News �
 - Sample news auto-loaded on first run
 - Use `--reload-db` flag to force reload: `streamlit run src/app.py -- --reload-db`
 
+#### `agents/` - Competitive Analysis Multi-Agent System
+**Purpose**: Autonomous sector research with specialized worker agents coordinated by a lightweight asyncio orchestrator
+
+**Key Components**:
+- `CompetitiveAnalysisOrchestrator`: Supervisor pipeline controller
+- `UniverseAgent`: Builds sector peer universe from ticker mapping
+- `NewsIntelAgent`: Fetches normalized competitor headlines in parallel
+- `SignalAgent`: Computes sentiment, trend, and volatility for each peer
+- `NarrativeAgent`: Generates competitive narrative and captures source citations
+- `RiskAgent`: Produces confidence score and risk flags
+- `ReportAgent`: Emits normalized report payload for UI/API consumers
+
+**Flow**:
+```
+Query -> Universe -> News -> Signals -> Narrative -> Risk -> Report
+```
+
+**Key Files**:
+- `src/core/agents/orchestrator.py`
+- `src/core/agents/state.py`
+- `src/core/agents/*.py`
+
 ---
 
 ### Utility Modules (`src/utils/`)
@@ -168,6 +190,7 @@ Ticker → Sector Mapping → Semantic Query → Vector Search → Sector News �
 
 **Key Components**:
 - `generate_pdf_report()`: Main PDF builder
+- `generate_competitive_pdf_report()`: Competitive analysis PDF builder
 - Custom formatting and styling
 
 **Dependencies**:
@@ -247,6 +270,28 @@ Ticker → Sector Mapping → Semantic Query → Vector Search → Sector News �
 8. Visualization (Charts + Tables + Alpha Flags + Optional: Sector Commentary + Source Articles)
    ↓
 9. Optional: PDF Export with progress tracking
+
+### Competitive Analysis Pipeline
+
+```
+1. User opens Competitive Analysis tab and selects focus ticker/limits
+   ↓
+2. CompetitiveAnalysisOrchestrator.run(query)
+   ↓
+3. UniverseAgent resolves sector and peer universe
+   ↓
+4. NewsIntelAgent fetches peer headlines in parallel
+   ↓
+5. SignalAgent computes sentiment/trend/volatility per peer in parallel
+   ↓
+6. NarrativeAgent requests sector-aware competitive commentary from RAGEngine
+   ↓
+7. RiskAgent computes confidence and risk flags
+   ↓
+8. ReportAgent returns normalized payload
+   ↓
+9. UI renders peer table, narrative, sources, flags, and optional Competitive PDF
+```
 ```
 
 **Performance Optimizations**:
@@ -266,6 +311,8 @@ Streamlit session state stores:
 - `enable_rag`: User preference for RAG sector news analysis
 - `llm_provider`: Selected LLM provider (OpenAI/Anthropic/HuggingFace/None)
 - `rag_cache`: Cached sector commentary to avoid redundant LLM calls
+- `competitive_cache`: Cached competitive report payloads per query/model tuple
+- `current_tickers`: Latest sidebar ticker input for tab defaults
 
 **Caching Strategy**:
 - AI models: `@st.cache_resource` (singleton, shared across sessions)
@@ -286,6 +333,7 @@ tests/
 ├── test_data_fetcher.py     # Async MarketDataClient tests (pytest-asyncio)
 ├── test_analysis_engine.py  # Async analysis pipeline tests
 ├── test_rag_engine.py       # RAG engine tests
+├── test_competitive_orchestrator.py  # Multi-agent competitive pipeline tests
 ├── test_charts.py           # Chart generation tests
 └── test_pdf_gen.py          # PDF generation tests
 ```

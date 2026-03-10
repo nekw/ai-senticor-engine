@@ -138,6 +138,7 @@ def _render_home_tab():
         st.divider()
         st.markdown("### 📊 Current Analysis")
 
+        # Columns will stack on mobile via CSS
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Tickers", len(st.session_state.data))

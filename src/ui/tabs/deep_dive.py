@@ -38,6 +38,7 @@ def render_deep_dive_tab(data: pd.DataFrame, cache: dict):
     st.subheader("📊 Company Position")
 
     # Show company sentiment score prominently
+    # Columns will stack on mobile via CSS
     col_sent1, col_sent2, col_sent3 = st.columns(3)
     with col_sent1:
         sentiment_trend = ticker_data.get("trend", 0)
@@ -71,6 +72,7 @@ def render_deep_dive_tab(data: pd.DataFrame, cache: dict):
     _render_sector_commentary(selected_ticker, row["sentiment"])
 
     # Technical Analysis and Recent News side by side
+    # Will stack vertically on mobile via CSS
     st.subheader("📈 Technical Analysis & Recent News")
 
     col1, col2 = st.columns([3, 2])
@@ -101,7 +103,8 @@ def _render_price_chart(ticker: str, price_data: pd.DataFrame):
         ticker: Stock ticker symbol.
         price_data: Historical price DataFrame.
     """
-    st.plotly_chart(create_price_chart(ticker, price_data))
+    # Chart will be responsive via CSS
+    st.plotly_chart(create_price_chart(ticker, price_data), use_container_width=True)
 
 
 def _render_sector_commentary(ticker: str, sentiment: float):

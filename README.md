@@ -78,6 +78,29 @@ The **Senticor Market Map** positions stocks in four strategic zones:
 
 ---
 
+## 📱 Mobile Support
+
+The Senticor Engine UI is **fully responsive** and optimized for mobile devices! Access your market intelligence on-the-go with:
+
+- **Auto-responsive layouts** that stack on mobile (< 768px)
+- **Touch-friendly controls** with minimum 44x44px touch targets
+- **Collapsible sidebar** for maximum screen real estate
+- **Responsive charts** that scale to fit any screen size
+- **Optimized typography** with device-specific font sizes
+
+📖 **See full mobile features and testing guide**: [docs/MOBILE.md](docs/MOBILE.md)
+
+**Quick Mobile Access:**
+```bash
+# Run Streamlit with network access
+streamlit run src/app.py --server.address 0.0.0.0
+
+# Then visit from your mobile device:
+# http://<your-computer-ip>:8501
+```
+
+---
+
 ## 🛠️ Installation
 
 ### Prerequisites

@@ -40,9 +40,11 @@ def render_trade_advisory(
 
     rec = SentimentEngine().get_trade_recommendation(sentiment, vol_normalized)
 
+    # Mobile-responsive trade advisory box
     st.markdown(
         f"""
-        <div style="padding:20px; border-radius:10px; border:2px solid {rec['color']};
+        <div class="trade-advisory-box" style="padding:20px; border-radius:10px;
+                    border:2px solid {rec['color']};
                     background-color: rgba(0,0,0,0.05)">
             <h3 style="color:{rec['color']}; margin-top:0;">
                 💡 Market Insight: {rec['action']}

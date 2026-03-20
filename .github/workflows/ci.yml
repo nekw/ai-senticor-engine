@@ -50,12 +50,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
         with:
-          cache: true
+          enable-cache: true
 
       - name: Install dependencies
         run: |
@@ -94,7 +93,7 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
         with:
-          cache: true
+          enable-cache: true
 
       - name: Install dependencies
         run: |

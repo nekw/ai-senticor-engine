@@ -1,6 +1,7 @@
 """Main Streamlit application entry point."""
 
 import asyncio
+import time
 
 import pandas as pd
 import streamlit as st
@@ -8,31 +9,41 @@ import streamlit as st
 from src.config import ALPHA_SENTIMENT_THRESHOLD, ALPHA_VOLATILITY_THRESHOLD
 from src.ui.analysis_engine import run_analysis
 from src.ui.config_loader import configure_page
-from src.ui.sidebar import render_alpha_flags, render_sidebar
-from src.ui.tabs import (
-    render_competitive_tab,
-    render_deep_dive_tab,
-    render_logs_tab,
-    render_market_map_tab,
-)
+from src.ui.sidebar import ensure_market_client, render_alpha_flags, render_sidebar
+from src.ui.tabs.competitive import render_competitive_tab
+from src.ui.tabs.config import render_config_tab
+from src.ui.tabs.deep_dive import render_deep_dive_tab
+from src.ui.tabs.logs import render_logs_tab
+from src.ui.tabs.market_map import render_market_map_tab
+from src.ui.tabs.sector_news import render_sector_news_tab
 from src.utils.logger import AppLogger
 
 
-def run_app(reload_db: bool = False):
-    """Run the main Streamlit application.
+def run_app():
+    """Run the main Streamlit application."""
+    is_initial_load = not st.session_state.get("app_bootstrapped", False)
+    run_start = time.perf_counter()
 
-    Args:
-        reload_db: If True, reload the RAG vector database with sample news.
-    """
+    if is_initial_load:
+        AppLogger.info("App startup", "Initial load started")
+
     # Initialize application
-    configure_page(reload_db=reload_db)
+    step_start = time.perf_counter()
+    configure_page()
+    _log_step_duration("Startup step", "configure_page", step_start, is_initial_load)
 
     # Render sidebar and get ticker input
-    tickers = render_sidebar()
+    step_start = time.perf_counter()
+    tickers = render_sidebar(emit_startup_logs=is_initial_load)
+    _log_step_duration("Startup step", "render_sidebar", step_start, is_initial_load)
 
     # Display alpha flags immediately after sidebar (before heavy tab rendering)
     if st.session_state.data is not None:
+        step_start = time.perf_counter()
         render_alpha_flags(st.session_state.data)
+        _log_step_duration(
+            "Startup step", "render_alpha_flags", step_start, is_initial_load
+        )
 
     # Check if run button was clicked
     if st.session_state.get("run_clicked", False):
@@ -40,7 +51,29 @@ def run_app(reload_db: bool = False):
         st.rerun()  # Force rerun to display results and alpha flags
 
     # Always show tabs (Home tab visible before running engine)
-    _render_tabs()
+    step_start = time.perf_counter()
+    _render_tabs(emit_logs=is_initial_load)
+    _log_step_duration("Startup step", "render_tabs", step_start, is_initial_load)
+
+    if is_initial_load:
+        AppLogger.info(
+            "App startup",
+            "Initial load complete in {:.0f} ms".format(
+                (time.perf_counter() - run_start) * 1000
+            ),
+        )
+        st.session_state.app_bootstrapped = True
+
+
+def _log_step_duration(
+    action: str, step_name: str, step_start: float, enabled: bool = True
+):
+    """Log elapsed time for a startup step."""
+    if not enabled:
+        return
+
+    elapsed_ms = (time.perf_counter() - step_start) * 1000
+    AppLogger.info(action, f"{step_name} took {elapsed_ms:.0f} ms")
 
 
 def _execute_analysis(tickers: str):
@@ -50,6 +83,9 @@ def _execute_analysis(tickers: str):
         tickers: Comma-separated string of ticker symbols.
     """
     AppLogger.info("Analysis started", f"Tickers: {tickers}")
+
+    # Lazily create market client only when analysis is requested.
+    ensure_market_client()
 
     ticker_list = [t.strip().upper() for t in tickers.split(",")]
 
@@ -104,21 +140,28 @@ def _execute_analysis(tickers: str):
         status_text.empty()
 
 
-def _render_tabs():
+def _render_tabs(emit_logs: bool = True):
     """Render all application tabs."""
-    tab_home, tab1, tab2, tab3, tab4 = st.tabs(
+    tabs_start = time.perf_counter()
+    tab_home, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
         [
             "🏠 Home",
             "📊 Market Intelligence",
             "🔍 Company Intelligence",
             "🏁 Competitive Analysis",
+            "📰 Sector News",
+            "⚙️ Config",
             "📋 Logs",
         ]
     )
+    _log_step_duration("Tab render", "create_tabs", tabs_start, emit_logs)
 
+    tab_start = time.perf_counter()
     with tab_home:
         _render_home_tab()
+    _log_step_duration("Tab render", "home", tab_start, emit_logs)
 
+    tab_start = time.perf_counter()
     with tab1:
         if st.session_state.data is not None:
             render_market_map_tab(st.session_state.data)
@@ -126,15 +169,32 @@ def _render_tabs():
             st.info(
                 "👈 Enter tickers in the sidebar and click **Run Engine** to see market analysis."
             )
+    _log_step_duration("Tab render", "market_intelligence", tab_start, emit_logs)
 
+    tab_start = time.perf_counter()
     with tab2:
         render_deep_dive_tab(st.session_state.data, st.session_state.cache)
+    _log_step_duration("Tab render", "company_intelligence", tab_start, emit_logs)
 
+    tab_start = time.perf_counter()
     with tab3:
         render_competitive_tab(st.session_state.data)
+    _log_step_duration("Tab render", "competitive_analysis", tab_start, emit_logs)
 
+    tab_start = time.perf_counter()
     with tab4:
+        render_sector_news_tab()
+    _log_step_duration("Tab render", "sector_news", tab_start, emit_logs)
+
+    tab_start = time.perf_counter()
+    with tab5:
+        render_config_tab()
+    _log_step_duration("Tab render", "config", tab_start, emit_logs)
+
+    tab_start = time.perf_counter()
+    with tab6:
         render_logs_tab()
+    _log_step_duration("Tab render", "logs", tab_start, emit_logs)
 
 
 def _render_home_tab():

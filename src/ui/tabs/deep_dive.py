@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from src.ui.components import render_news_feed, render_trade_advisory
+from src.ui.rag_mapping import apply_mapping_overrides
 from src.utils.charts import create_price_chart
 
 
@@ -114,85 +115,90 @@ def _render_sector_commentary(ticker: str, sentiment: float):
         ticker: Stock ticker symbol.
         sentiment: Sentiment score.
     """
-    # Check if RAG is enabled
+    # Check if RAG generation is enabled
     llm_provider = st.session_state.get("llm_provider", None)
 
-    # Only show if user has enabled RAG
-    if llm_provider is not None:
-        with st.expander("📊 Sector Intelligence & News Analysis", expanded=False):
-            # Check cache first
-            cache_key = f"rag_{ticker}_{sentiment:.2f}"
-            cache_key_sources = f"rag_sources_{ticker}_{sentiment:.2f}"
+    with st.expander("📊 Sector Intelligence & News Analysis", expanded=False):
+        if llm_provider is None:
+            st.info(
+                "Sector commentary generation is disabled. "
+                "Enable **📰 Sector News Analysis** in the sidebar."
+            )
+            return
 
-            # Initialize RAG cache if not exists
-            if "rag_cache" not in st.session_state:
-                st.session_state.rag_cache = {}
+        # Check cache first
+        cache_key = f"rag_{ticker}_{sentiment:.2f}"
+        cache_key_sources = f"rag_sources_{ticker}_{sentiment:.2f}"
 
-            # Use cached result if available
-            if cache_key in st.session_state.rag_cache:
-                commentary = st.session_state.rag_cache[cache_key]
-                news_sources = st.session_state.rag_cache.get(cache_key_sources, [])
-                st.markdown(commentary, unsafe_allow_html=True)
-                st.caption("📦 *Cached result - refresh page to regenerate*")
-            else:
-                with st.spinner("Analyzing sector news and trends..."):
-                    try:
-                        # Lazy import to avoid loading at startup
-                        from src.core.rag_engine import RAGEngine
+        # Initialize RAG cache if not exists
+        if "rag_cache" not in st.session_state:
+            st.session_state.rag_cache = {}
 
-                        # Get LLM config from session state
-                        llm_model = st.session_state.get("llm_model", None)
-                        llm_temperature = st.session_state.get("llm_temperature", 0.3)
+        # Use cached result if available
+        if cache_key in st.session_state.rag_cache:
+            commentary = st.session_state.rag_cache[cache_key]
+            news_sources = st.session_state.rag_cache.get(cache_key_sources, [])
+            st.markdown(commentary, unsafe_allow_html=True)
+            st.caption("📦 *Cached result - refresh page to regenerate*")
+        else:
+            with st.spinner("Analyzing sector news and trends..."):
+                try:
+                    # Lazy import to avoid loading at startup
+                    from src.core.rag_engine import RAGEngine
 
-                        # Initialize RAG with configured LLM
-                        rag = RAGEngine(
-                            llm_provider=llm_provider,
-                            model=llm_model,
-                            temperature=llm_temperature,
-                        )
+                    # Get LLM config from session state
+                    llm_model = st.session_state.get("llm_model", None)
+                    llm_temperature = st.session_state.get("llm_temperature", 0.3)
 
-                        # Get sector commentary with sources
-                        result = rag.get_sector_commentary(
-                            ticker=ticker,
-                            company_sentiment=sentiment,
-                            k=10,
-                            return_sources=True,
-                        )
+                    # Initialize RAG with configured LLM
+                    rag = RAGEngine(
+                        llm_provider=llm_provider,
+                        model=llm_model,
+                        temperature=llm_temperature,
+                    )
+                    rag = apply_mapping_overrides(rag)
 
-                        # Unpack tuple result
-                        if isinstance(result, tuple):
-                            commentary, news_sources = result
-                        else:
-                            commentary = result
-                            news_sources = []
+                    # Get sector commentary with sources
+                    result = rag.get_sector_commentary(
+                        ticker=ticker,
+                        company_sentiment=sentiment,
+                        k=10,
+                        return_sources=True,
+                    )
 
-                        # Cache both commentary and sources
-                        st.session_state.rag_cache[cache_key] = commentary
-                        st.session_state.rag_cache[cache_key_sources] = news_sources
-
-                        st.markdown(commentary, unsafe_allow_html=True)
-
-                    except Exception as e:
-                        st.warning(f"Sector analysis unavailable: {str(e)}")
-                        st.info(
-                            "Add sector news using `rag.add_sector_news()` for sector commentary."
-                        )
+                    # Unpack tuple result
+                    if isinstance(result, tuple):
+                        commentary, news_sources = result
+                    else:
+                        commentary = result
                         news_sources = []
 
-            # Show news sources in expandable section
-            if news_sources:
-                with st.expander(
-                    f"📋 View Source News Articles ({len(news_sources)} articles)",
-                    expanded=False,
-                ):
-                    for i, article in enumerate(news_sources, 1):
-                        st.caption(
-                            "📅 {} | 🏢 {}".format(
-                                article["date"],
-                                article["ticker"]
-                                if article["ticker"]
-                                else "Sector-wide",
-                            )
+                    # Cache both commentary and sources
+                    st.session_state.rag_cache[cache_key] = commentary
+                    st.session_state.rag_cache[cache_key_sources] = news_sources
+
+                    st.markdown(commentary, unsafe_allow_html=True)
+
+                except Exception as e:
+                    st.warning(f"Sector analysis unavailable: {str(e)}")
+                    st.info(
+                        "Use the **📰 Sector News** tab to load sector news "
+                        "before generating commentary."
+                    )
+                    news_sources = []
+
+        # Show news sources in expandable section
+        if news_sources:
+            with st.expander(
+                ("📋 View Source News Articles " f"({len(news_sources)} articles)"),
+                expanded=False,
+            ):
+                for i, article in enumerate(news_sources, 1):
+                    st.caption(
+                        "📅 {} | 🏢 {}".format(
+                            article["date"],
+                            article["ticker"] if article["ticker"] else "Sector-wide",
                         )
-                        st.markdown(article["content"])
-                        st.divider()
+                    )
+                    st.markdown(article["content"])
+                    st.divider()

@@ -6,7 +6,10 @@ sector-wide market commentary and insights.
 """
 
 import os
+import random
+import shutil
 from datetime import datetime
+from hashlib import sha256
 from typing import List, Optional, Tuple, Union
 
 from langchain_anthropic import ChatAnthropic
@@ -18,6 +21,76 @@ from langchain_openai import ChatOpenAI
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from src.utils.logger import AppLogger
+
+
+class _HashEmbeddings:
+    """Lightweight deterministic embedding fallback (no torch dependencies)."""
+
+    def __init__(self, dimension: int = 384):
+        self.dimension = dimension
+
+    def _embed_text(self, text: str) -> List[float]:
+        seed = hash(text)
+        rng = random.Random(seed)
+        vector = [rng.uniform(-1.0, 1.0) for _ in range(self.dimension)]
+
+        norm = sum(v * v for v in vector) ** 0.5
+        if norm == 0:
+            return vector
+        return [v / norm for v in vector]
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self._embed_text(text) for text in texts]
+
+    def embed_query(self, text: str) -> List[float]:
+        return self._embed_text(text)
+
+
+class _ResilientEmbeddings:
+    """Wrap primary embeddings and fallback on runtime backend/device errors."""
+
+    def __init__(self, primary, fallback):
+        self.primary = primary
+        self.fallback = fallback
+        self._fallback_enabled = False
+
+    def _should_fallback(self, error: Exception) -> bool:
+        error_text = str(error)
+        return "meta tensor" in error_text.lower() or "to_empty()" in error_text
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        if self._fallback_enabled:
+            return self.fallback.embed_documents(texts)
+
+        try:
+            return self.primary.embed_documents(texts)
+        except Exception as e:
+            if self._should_fallback(e):
+                self._fallback_enabled = True
+                AppLogger.warning(
+                    "RAG embeddings fallback",
+                    "Primary embeddings failed with device/meta error; "
+                    "switching to hash embeddings.",
+                )
+                return self.fallback.embed_documents(texts)
+            raise
+
+    def embed_query(self, text: str) -> List[float]:
+        if self._fallback_enabled:
+            return self.fallback.embed_query(text)
+
+        try:
+            return self.primary.embed_query(text)
+        except Exception as e:
+            if self._should_fallback(e):
+                self._fallback_enabled = True
+                AppLogger.warning(
+                    "RAG embeddings fallback",
+                    "Primary query embeddings failed with device/meta error; "
+                    "switching to hash embeddings.",
+                )
+                return self.fallback.embed_query(text)
+            raise
 
 
 class RAGEngine:
@@ -81,7 +154,6 @@ class RAGEngine:
             # Technology
             "AAPL": "Technology",
             "MSFT": "Technology",
-            "GOOGL": "Technology",
             "GOOG": "Technology",
             "AMZN": "E-commerce",
             "META": "Social Media",
@@ -139,7 +211,11 @@ class RAGEngine:
                         model, revision="main", trust_remote_code=False
                     )
                     self.hf_model = AutoModelForSeq2SeqLM.from_pretrained(
-                        model, revision="main", trust_remote_code=False
+                        model,
+                        revision="main",
+                        trust_remote_code=False,
+                        low_cpu_mem_usage=False,
+                        device_map=None,
                     )
                     self.hf_temperature = temperature
                     self.llm = "huggingface"  # Flag to use custom generation
@@ -159,25 +235,31 @@ class RAGEngine:
                     f"Warning: Failed to initialize LLM: {e}. Using retrieval-only mode."
                 )
 
-        # Use HuggingFace embeddings (free, no API key needed)
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
-        )
+        # Use HuggingFace embeddings (free, no API key needed).
+        # If torch/transformers device state is broken (meta tensor errors),
+        # gracefully degrade to deterministic hash embeddings so core flows keep working.
+        self.embeddings: Union[_ResilientEmbeddings, _HashEmbeddings]
+        fallback_embeddings = _HashEmbeddings(dimension=384)
+        try:
+            primary_embeddings = HuggingFaceEmbeddings(
+                model_name="sentence-transformers/all-MiniLM-L6-v2",
+                model_kwargs={"device": "cpu"},
+                encode_kwargs={"normalize_embeddings": True},
+            )
+            self.embeddings = _ResilientEmbeddings(
+                primary=primary_embeddings,
+                fallback=fallback_embeddings,
+            )
+        except Exception as e:
+            AppLogger.warning(
+                "RAG embeddings init fallback",
+                f"HuggingFace embeddings init failed, using hash fallback: {e}",
+            )
+            self.embeddings = fallback_embeddings
 
-        # Initialize or load Chroma vector store for sector news
-        if os.path.exists(persist_directory):
-            self.vectorstore = Chroma(
-                persist_directory=persist_directory,
-                embedding_function=self.embeddings,
-                collection_name="sector_news",
-            )
-        else:
-            # Create new vector store (auto-persists in new Chroma)
-            self.vectorstore = Chroma(
-                persist_directory=persist_directory,
-                embedding_function=self.embeddings,
-                collection_name="sector_news",
-            )
+        # Initialize or load Chroma vector store for sector news.
+        # If tenant metadata is corrupted, auto-heal by recreating local DB files.
+        self.vectorstore = self._create_vectorstore_with_recovery()
 
     def get_sector(self, ticker: str) -> str:
         """Get sector for a given ticker.
@@ -221,11 +303,13 @@ class RAGEngine:
         # Build document content
         doc_content = f"**{headline}**\n\n{content}"
 
+        resolved_date = date or datetime.now().strftime("%Y-%m-%d")
+
         # Build metadata
         metadata = {
             "sector": sector,
             "headline": headline,
-            "date": date or datetime.now().strftime("%Y-%m-%d"),
+            "date": resolved_date,
             "added_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
 
@@ -234,9 +318,75 @@ class RAGEngine:
         if url:
             metadata["url"] = url
 
-        # Add to vector store (auto-persists in new Chroma)
+        doc_id = self._build_sector_news_id(
+            sector=sector,
+            headline=headline,
+            ticker=ticker,
+            date=resolved_date,
+        )
+
+        # Upsert by deterministic ID so repeated loads do not create duplicates.
         doc = Document(page_content=doc_content, metadata=metadata)
-        self.vectorstore.add_documents([doc])
+        try:
+            self.vectorstore.add_documents([doc], ids=[doc_id])
+        except Exception as e:
+            if not self._is_tenant_connection_error(e):
+                raise
+
+            AppLogger.warning(
+                "RAG insert recovery",
+                "Tenant connection failed during insert. Recreating local vector DB and retrying.",
+            )
+            self.vectorstore = self._create_vectorstore_with_recovery()
+            self.vectorstore.add_documents([doc], ids=[doc_id])
+
+    def _build_sector_news_id(
+        self,
+        sector: str,
+        headline: str,
+        ticker: Optional[str],
+        date: Optional[str],
+    ) -> str:
+        """Build deterministic document ID for sector-news deduplication."""
+        raw = "|".join(
+            [
+                str(sector or "").strip().lower(),
+                str(ticker or "").strip().upper(),
+                str(date or "").strip(),
+                str(headline or "").strip().lower(),
+            ]
+        )
+        return sha256(raw.encode("utf-8")).hexdigest()
+
+    def _build_vectorstore(self) -> Chroma:
+        """Create Chroma vector store instance for sector news collection."""
+        return Chroma(
+            persist_directory=self.persist_directory,
+            embedding_function=self.embeddings,
+            collection_name="sector_news",
+        )
+
+    def _is_tenant_connection_error(self, error: Exception) -> bool:
+        """Return True when exception indicates corrupted/missing Chroma tenant metadata."""
+        text = str(error)
+        return "default_tenant" in text or "Could not connect to tenant" in text
+
+    def _create_vectorstore_with_recovery(self) -> Chroma:
+        """Create vector store and auto-recover known tenant metadata corruption."""
+        try:
+            return self._build_vectorstore()
+        except Exception as e:
+            if not self._is_tenant_connection_error(e):
+                raise
+
+            AppLogger.warning(
+                "RAG vectorstore recovery",
+                "Detected Chroma tenant metadata issue. Recreating local vector DB.",
+            )
+            if os.path.exists(self.persist_directory):
+                shutil.rmtree(self.persist_directory, ignore_errors=True)
+            os.makedirs(self.persist_directory, exist_ok=True)
+            return self._build_vectorstore()
 
     def get_sector_commentary(
         self,
@@ -595,27 +745,26 @@ class RAGEngine:
         """Clear all documents from the vector database.
 
         Warning: This will permanently delete all stored sector news articles.
-        Only clears if database exists.
         """
-        if not self.database_exists():
-            print(
-                "ℹ️ No existing database to clear. Database will be created on first use."
-            )
-            return
-
         try:
-            # Delete the collection and recreate it
             self.vectorstore.delete_collection()
 
-            # Recreate the vector store
-            self.vectorstore = Chroma(
-                persist_directory=self.persist_directory,
-                embedding_function=self.embeddings,
-                collection_name="sector_news",
+            self.vectorstore = self._create_vectorstore_with_recovery()
+
+            # Verify the recreated collection is empty.
+            remaining = self.vectorstore.get()
+            remaining_ids = (
+                remaining.get("ids", []) if isinstance(remaining, dict) else []
             )
-            print("✓ Vector database cleared successfully")
+            if remaining_ids:
+                raise RuntimeError(
+                    "Vector database clear verification failed: collection is not empty"
+                )
+
+            AppLogger.success("RAG clear", "Vector database cleared successfully")
         except Exception as e:
-            print(f"Warning: Failed to clear vector database: {e}")
+            AppLogger.error("RAG clear failed", str(e))
+            raise RuntimeError(f"Failed to clear vector database: {e}") from e
 
     def add_ticker_sector_mapping(self, ticker: str, sector: str):
         """Add or update ticker-to-sector mapping.

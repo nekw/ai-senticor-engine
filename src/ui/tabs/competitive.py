@@ -5,8 +5,7 @@ import asyncio
 import pandas as pd
 import streamlit as st
 
-from src.core.agents import CompetitiveAnalysisOrchestrator, CompetitiveQuery
-from src.core.rag_engine import RAGEngine
+from src.ui.rag_mapping import apply_mapping_overrides
 from src.utils.pdf_gen import generate_competitive_pdf_report
 
 
@@ -89,11 +88,16 @@ def _run_orchestrator(
     sector_override: str | None,
 ) -> dict:
     """Run orchestrator end-to-end and return normalized report payload."""
+    # Keep these imports local so app startup does not pay competitive stack cost.
+    from src.core.agents import CompetitiveAnalysisOrchestrator, CompetitiveQuery
+    from src.core.rag_engine import RAGEngine
+
     rag_engine = RAGEngine(
         llm_provider=st.session_state.get("llm_provider"),
         model=st.session_state.get("llm_model") or "gpt-4o-mini",
         temperature=st.session_state.get("llm_temperature", 0.3),
     )
+    rag_engine = apply_mapping_overrides(rag_engine)
 
     orchestrator = CompetitiveAnalysisOrchestrator(
         client=st.session_state.client,

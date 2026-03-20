@@ -37,11 +37,13 @@ Real-world demonstration of **production-grade AI engineering** applied to finan
 **AI/ML Engineering:**
 - **FinBERT Sentiment Analysis**: Fine-tuned transformer model (ProsusAI) for financial news sentiment scoring
 - **RAG Sector Insights**: ChromaDB vector search + LLM generation for sector-wide commentary
+- **Config-Driven Sector Control**: Dedicated Sector News tab for Sector DB operations plus Config tab for editable ticker-sector mapping
 - **Multi-LLM Support**: Provider abstraction layer with graceful fallback (OpenAI/Anthropic/HuggingFace FREE models)
 - **Multi-Agent Orchestration**: Lightweight `asyncio` supervisor with specialized worker agents for autonomous sector research
 
 **Technical Architecture:**
 - **10x Faster with Async**: Parallel processing across 50+ tickers using `asyncio` patterns
+- **Startup Performance Telemetry**: Initial load now emits per-step timing logs (page config, session init, sidebar, tabs) visible in the Logs tab
 - **Testing Excellence**: 114 unit tests with mocking, fixtures, edge cases (timeout, rate limits, malformed data)
 - **CI/CD Pipeline**: GitHub Actions with automated lint, test, coverage, and security scanning using `uv` for 10-100x faster builds
 - **Security First**: Automated security scanning with Bandit, Safety, pip-audit, and Trivy; SARIF results uploaded to GitHub Security
@@ -133,9 +135,6 @@ pip install -r requirements.txt
 
 # Run the application
 streamlit run src/app.py
-
-# Optional: Reload RAG database with fresh sample news
-streamlit run src/app.py -- --reload-db
 ```
 
 ### � Privacy Configuration (Recommended)
@@ -191,8 +190,11 @@ OBB_ALPHA_VANTAGE_API_KEY=your_av_key_here
    - Select LLM provider: HuggingFace (Free), OpenAI, or Anthropic
    - Choose model and temperature settings
 
-3. **Enter Stock Tickers**
-   - Input comma-separated ticker symbols (e.g., `AAPL,TSLA,NVDA,MSFT`)
+3. **Configure Ticker-Sector Mapping**
+   - Open the "⚙️ Config" tab
+   - Edit the **Ticker-Sector Mapping** table (add/remove tickers or update sectors)
+   - Click **Save Mapping Changes**
+   - Sidebar tickers are read-only and automatically sourced from this mapping table
 
 4. **Run Analysis**
    - Click "🚀 Run Engine" to fetch data and generate insights
@@ -203,6 +205,18 @@ OBB_ALPHA_VANTAGE_API_KEY=your_av_key_here
    - Check "🎯 Alpha Flags" in the sidebar for top opportunities
    - Use "Company Intelligence" tab for detailed stock analysis with risk-adjusted recommendations
    - Use "Competitive Analysis" tab for peer-universe intelligence, signal comparison, and confidence-scored narrative
+   - Use the "📰 Sector News" tab for:
+     - Sector DB controls (clear DB, load all sector news)
+     - Lookback window selection from 1D to 1M (default 7D)
+     - Browsing all persisted sector news with filtering
+   - Use the "⚙️ Config" tab for persistent ticker-sector mapping management
+   - Use the "📋 Logs" tab to inspect startup timing breakdown on first load (helps identify slow initialization steps)
+
+### Mapping Persistence
+
+- Custom ticker-sector overrides are persisted locally at `data/custom_sector_mapping.json`
+- Overrides are loaded automatically on app startup/rerun
+- Reset in Config clears both session state and the JSON override file
 
 6. **Generate Report**
    - Download PDF report for documentation or presentations

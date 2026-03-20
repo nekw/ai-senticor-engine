@@ -4,6 +4,8 @@ This module provides AI-powered sentiment analysis for financial text using
 the ProsusAI FinBERT model, specifically trained on financial domain data.
 """
 
+import threading
+
 
 class SentimentEngine:
     """AI-powered sentiment analyzer for financial headlines.
@@ -23,23 +25,39 @@ class SentimentEngine:
         Average sentiment: 0.00
     """
 
+    _shared_model = None
+    _model_lock = threading.Lock()
+
     def __init__(self):
         """Initialize the sentiment engine with FinBERT model."""
-        # Lazy loading: model loaded only when first needed
-        self._model = None
+        # Instance points to class-level shared model (loaded lazily once).
+        self._model = SentimentEngine._shared_model
         self.score_map = {"positive": 1, "neutral": 0, "negative": -1}
 
     @property
     def model(self):
         """Lazy load the FinBERT model on first access."""
-        if self._model is None:
+        # Allow per-instance overrides (used in tests/mocking) to take precedence.
+        if self._model is not None:
+            return self._model
+
+        if SentimentEngine._shared_model is not None:
+            self._model = SentimentEngine._shared_model
+            return self._model
+
+        with SentimentEngine._model_lock:
+            # Another thread may have completed load while waiting for the lock.
+            if SentimentEngine._shared_model is not None:
+                self._model = SentimentEngine._shared_model
+                return self._model
+
             try:
                 import streamlit as st
 
                 with st.spinner("🤖 Loading FinBERT AI model (first-time load)..."):
                     from transformers import pipeline
 
-                    self._model = pipeline(
+                    loaded_model = pipeline(
                         "sentiment-analysis", model="ProsusAI/finbert"
                     )
             except ImportError:
@@ -47,8 +65,11 @@ class SentimentEngine:
                 print("📥 Loading FinBERT model...")
                 from transformers import pipeline
 
-                self._model = pipeline("sentiment-analysis", model="ProsusAI/finbert")
+                loaded_model = pipeline("sentiment-analysis", model="ProsusAI/finbert")
                 print("✅ FinBERT model loaded successfully")
+
+            SentimentEngine._shared_model = loaded_model
+            self._model = loaded_model
         return self._model
 
     def analyze_headlines(self, headlines: list[str]) -> float:

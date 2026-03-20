@@ -9,6 +9,15 @@ import streamlit as st
 class AppLogger:
     """Logger for tracking application events and backend actions."""
 
+    STARTUP_CONSOLE_ACTIONS = {
+        "App startup",
+        "Startup step",
+        "Sidebar step",
+        "Tab render",
+        "Page config",
+        "Session init",
+    }
+
     @staticmethod
     def log(
         action: str,
@@ -41,6 +50,15 @@ class AppLogger:
         st.session_state.app_logs.append(log_entry)
         if len(st.session_state.app_logs) > 500:
             st.session_state.app_logs = st.session_state.app_logs[-500:]
+
+        # Echo startup timing logs to terminal for quick initial-load diagnosis.
+        if action in AppLogger.STARTUP_CONSOLE_ACTIONS:
+            console_line = "[{}] {} | {}".format(
+                log_entry["timestamp"],
+                action,
+                log_entry["details"],
+            )
+            print(console_line, flush=True)
 
     @staticmethod
     def info(action: str, details: Optional[str] = None, ticker: Optional[str] = None):

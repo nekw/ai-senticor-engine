@@ -168,6 +168,30 @@ rag = RAGEngine(llm_provider="openai", temperature=0.7)
 5. Adjust temperature slider (0.0-1.0)
 6. Analyze any ticker to see sector commentary
 
+### Sector News + Config Tabs
+Sector intelligence operations are split across two tabs:
+
+- **📰 Sector News Tab**
+  - **Sector DB Controls**
+  - **🗑️ Clear Sector DB**: Clears the Chroma sector-news collection
+  - **📥 Load All Sector News**: Fetches and ingests news across mapped tickers
+  - **Lookback Window**: 1D to 1M (default: 7D)
+  - **All Sector News Explorer**
+    - Browse all persisted sector news records
+    - Filter records by sector
+    - Inspect stored headlines/content snippets and source URLs
+
+- **⚙️ Config Tab**
+  - **Ticker-Sector Mapping**
+  - Editable table for adding/removing tickers and changing sector assignments
+  - Save changes with **💾 Save Mapping Changes**
+  - Revert with **↩️ Reset To Default Mapping**
+
+- **Persistence**
+  - Custom mapping overrides persist to local JSON: `data/custom_sector_mapping.json`
+  - Overrides auto-load on app startup/rerun
+  - Sidebar ticker list is read-only and always sourced from the mapping table
+
 ### Viewing Sector Intelligence
 In the **Company Intelligence** tab, sector analysis appears as:
 - **📊 Sector Intelligence & News Analysis**: Expandable section with LLM-generated commentary

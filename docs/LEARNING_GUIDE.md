@@ -363,7 +363,7 @@ Sector Commentary (natural language)
 
 ### For Business Users
 1. Run the app: `streamlit run src/app.py`
-   - Optional: Force reload sample news database: `streamlit run src/app.py -- --reload-db`
+    - Optional: In the app, open **📰 Sector News** and click **📥 Load All Sector News**
 2. Analyze 5 stocks in your portfolio
 3. Read the **Business Knowledge** section above
 4. Experiment with RAG-powered sector analysis (see [docs/RAG_SECTOR_NEWS.md](docs/RAG_SECTOR_NEWS.md))
@@ -371,7 +371,7 @@ Sector Commentary (natural language)
 
 ### For Developers
 1. Set up dev environment: `pip install -r requirements.txt`
-2. Initialize database (optional): `streamlit run src/app.py -- --reload-db`
+2. Initialize database (optional): use **📰 Sector News** tab controls in the app
 3. Read **Software Architecture** section above
 4. Study the full architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 5. Run tests: `pytest tests/`

@@ -1,5 +1,7 @@
 """Sidebar UI component for data source configuration and controls."""
 
+import time
+
 import pandas as pd
 import streamlit as st
 
@@ -13,11 +15,12 @@ from src.config import (
     DEFAULT_LLM_TEMPERATURE,
     DEFAULT_NEWS_PROVIDER,
     DEFAULT_PRICE_PROVIDER,
-    DEFAULT_TICKERS,
     LLM_MODELS,
     SIDEBAR_TITLE,
 )
 from src.core.data_fetcher import MarketDataClient
+from src.ui.rag_mapping import get_effective_tickers
+from src.utils.logger import AppLogger
 
 
 def render_provider_selection() -> tuple[str, str]:
@@ -132,6 +135,23 @@ def update_market_client(price_provider: str, news_provider: str):
         st.session_state.news_provider = news_provider
 
 
+def ensure_market_client() -> MarketDataClient:
+    """Ensure a market client exists using current provider selections."""
+    price_provider = st.session_state.get("price_provider", DEFAULT_PRICE_PROVIDER)
+    news_provider = st.session_state.get("news_provider", DEFAULT_NEWS_PROVIDER)
+    update_market_client(price_provider, news_provider)
+    return st.session_state.client
+
+
+def _log_sidebar_step(step_name: str, step_start: float, enabled: bool):
+    """Emit timing logs for sidebar startup steps."""
+    if not enabled:
+        return
+
+    elapsed_ms = (time.perf_counter() - step_start) * 1000
+    AppLogger.info("Sidebar step", f"{step_name} took {elapsed_ms:.0f} ms")
+
+
 def render_alpha_flags(data: pd.DataFrame):
     """Render alpha flag indicators in sidebar.
 
@@ -151,7 +171,7 @@ def render_alpha_flags(data: pd.DataFrame):
         st.sidebar.info("No alpha opportunities found")
 
 
-def render_sidebar() -> str:
+def render_sidebar(emit_startup_logs: bool = False) -> str:
     """Render complete sidebar with all controls.
 
     Note: Sidebar is automatically responsive via CSS - auto-collapses on mobile.
@@ -162,31 +182,44 @@ def render_sidebar() -> str:
     st.sidebar.title(SIDEBAR_TITLE)
 
     # Provider selection
+    step_start = time.perf_counter()
     price_provider, news_provider = render_provider_selection()
-    update_market_client(price_provider, news_provider)
+    st.session_state.price_provider = price_provider
+    st.session_state.news_provider = news_provider
+    _log_sidebar_step("provider_selection", step_start, emit_startup_logs)
 
-    # Ticker input
+    # Tickers from mapping (read-only)
+    step_start = time.perf_counter()
     st.sidebar.divider()
+    mapping_tickers = get_effective_tickers()
+    tickers_value = ",".join(mapping_tickers)
     tickers = st.sidebar.text_area(
-        "Tickers (comma-separated)",
-        DEFAULT_TICKERS,
+        "Tickers (from Ticker-Sector Mapping)",
+        tickers_value,
         height=120,
-        help="Enter ticker symbols separated by commas",
+        help="Read-only list sourced from the Ticker-Sector Mapping table in the ⚙️ Config tab.",
+        disabled=True,
     )
     st.session_state.current_tickers = tickers
+    _log_sidebar_step("effective_ticker_mapping", step_start, emit_startup_logs)
 
     # Run Engine button
     run_clicked = st.sidebar.button("🚀 Run Engine", use_container_width=True)
+    st.session_state.run_clicked = run_clicked
 
     # LLM configuration
+    step_start = time.perf_counter()
     llm_provider, model, temperature = render_llm_selection()
+    _log_sidebar_step("llm_selection", step_start, emit_startup_logs)
 
     # Store LLM config in session state
     st.session_state.llm_provider = llm_provider
     st.session_state.llm_model = model
     st.session_state.llm_temperature = temperature
 
-    # Store run button state
-    st.session_state.run_clicked = run_clicked
+    if run_clicked:
+        step_start = time.perf_counter()
+        ensure_market_client()
+        _log_sidebar_step("market_client_init", step_start, emit_startup_logs)
 
     return tickers

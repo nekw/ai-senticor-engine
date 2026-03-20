@@ -141,8 +141,7 @@ Ticker → Sector Mapping → Semantic Query → Vector Search → Sector News �
 - Multiple LLM options (paid and free)
 - Configurable retrieval parameters (top-k news articles)
 - Optional UI toggle (can be disabled)
-- Sample news auto-loaded on first run
-- Use `--reload-db` flag to force reload: `streamlit run src/app.py -- --reload-db`
+- Sector news is loaded from live provider data via the Sector News tab controls
 
 #### `agents/` - Competitive Analysis Multi-Agent System
 **Purpose**: Autonomous sector research with specialized worker agents coordinated by a lightweight asyncio orchestrator
@@ -169,6 +168,18 @@ Query -> Universe -> News -> Signals -> Narrative -> Risk -> Report
 ---
 
 ### Utility Modules (`src/utils/`)
+
+#### `logger.py` - Application Observability
+**Purpose**: Centralized structured logging for analysis and UI lifecycle events
+
+**Key Components**:
+- `AppLogger`: Session-backed logger used across the UI and engine flows
+- Log levels: INFO, SUCCESS, WARNING, ERROR
+- Startup telemetry for first-load timing (page configuration, session initialization, sidebar render, and tab render steps)
+
+**Usage**:
+- Logs are surfaced in the **Logs** tab with filtering/export support
+- Startup timing logs help diagnose slow initial app load and pinpoint bottlenecks
 
 #### `charts.py` - Visualization Components
 **Purpose**: Generate interactive Plotly charts
@@ -200,21 +211,22 @@ Query -> Universe -> News -> Signals -> Narrative -> Risk -> Report
 - A4 format
 - Tables, headers, disclaimers
 
-#### `load_sample_news.py` - Sector News Database Initialization
-**Purpose**: Populate RAG vector database with sample sector news
+#### Sector News Operations
+**Purpose**: Populate and maintain the RAG vector database from live provider data
 
 **Key Components**:
-- `load_all_sample_news()`: Main initialization function
-- Pre-populated news for Technology, Semiconductors, Banking, Energy sectors
-- Automatically called on app startup
+- Sector News tab controls for clear/reload workflows
+- Lookback-based ingestion for mapped tickers
+- Duplicate-safe insert and filtering logic
 
 **Dependencies**:
 - `core.rag_engine`
+- `ui/tabs/sector_news.py`
 
 **Features**:
-- Sample news for 15+ tickers across 4+ sectors
+- Live news ingestion for mapped sectors
 - Database clearing and initialization
-- Sector-specific news organization
+- Duplicate-safe sector news organization
 
 ---
 
@@ -244,7 +256,7 @@ Query -> Universe -> News -> Signals -> Narrative -> Risk -> Report
 ### Complete Analysis Pipeline
 
 ```
-1. User Input (Tickers, Data Provider, Optional: Enable RAG)
+1. User Configuration (Ticker-Sector Mapping, Data Provider, Optional: Enable RAG)
    ↓
 2. PARALLEL TICKER ANALYSIS (via asyncio.gather)
    ├─ Ticker 1 ──┐
